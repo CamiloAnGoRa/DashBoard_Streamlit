@@ -90,3 +90,65 @@ with col3:
 with col4:
     cac = df['costo_adquisicion'].mean()
     st.metric("CAC Promedio", f"${cac:.0f}", f"-{np.random.uniform(2, 8):.1f}%")
+
+
+################################
+#########GRAFICOS###############
+################################
+
+st.markdown("## Análisis de Tendencias")
+col1, col2 = st.columns(2)
+
+with col1:
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df['fecha'], y=df['ingresos_diarios'], mode='lines', name='Ingresos Reales', line=dict(color='#1d4e79')))
+    z = np.polyfit(range(len(df)), df['ingresos_diarios'], 1)
+    p = np.poly1d(z)
+    fig.add_trace(go.Scatter(x=df['fecha'], y=p(range(len(df))), mode='lines', name='Tendencia', line=dict(color='red', dash='dash')))
+    fig.update_layout(title = "Evolución de Ingresos", height=400, template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
+
+with col2:
+    etapas = ['Visitantes', 'Leads', 'Oportunidades', 'Clientes']
+    valores = [10000, 2500, 625, 156]
+    funnel = go.Figure(go.Funnel(y=etapas, x=valores, textinfo="value+percent initial"))
+    funnel.update_layout(title="Funnel Conversión", height=400, template="plotly_white")
+    st.plotly_chart(funnel, use_container_width=True)
+
+
+
+############################
+#########Ana_Geogra#########
+############################
+
+st.markdown("Análisis Geográfico")
+paises = ['México', 'Colombia', 'Chile', 'Argentina', 'Perú', 'España']
+ventas_pais = np.random.uniform(10000, 100000, len(paises))
+mapa = px.bar(x=paises, y=ventas_pais, color=ventas_pais, color_continuous_scale='Viridis', title="Ventas por Región")
+mapa.update_layout(height=400, template="plotly_white", showlegend=False)
+st.plotly_chart(mapa, use_container_width=True)
+
+
+#############################
+#######Alert_Intel###########
+#############################
+
+st.markdown("Centro de Alertas Inteligentes")
+alertas=[]
+
+if df['ingresos_diarios'].tail(7).mean() < df['ingresos_diarios'].head(-7).mean():
+    alertas.append({'tipo': 'Advertencia', 'mensaje': 'Ingresos por debajo del promedio en los ultimos 7 dias', 'color': 'orange'})
+
+if df['conversion_rate'].tail(1).iloc[0] < 2.0:
+    alertas.append({'tipo': 'critico', 'mensaje': 'Tasa de conversion < 2%. Accion inmediata requerida', 'color': 'red'})
+
+if df['usuarios_activos'].tail(1).iloc[0] > df['usuarios_activos'].quantile(0.9):
+    alertas.append({'tipo': 'Exito', 'mensaje': 'Usuarios activos en top 10% historico', 'color': 'green'})
+
+for alerta in alertas:
+    st.markdown(f"""
+    <div style="padding: 1rem; margin: 0.5rem 0; background-color: {alerta['color']};
+                color: white; border-radius: 10px; font-weight:bold;">
+        {alerta['tipo']}: {alerta['mensaje']}
+    </div>
+    """, unsafe_allow_html=True)
